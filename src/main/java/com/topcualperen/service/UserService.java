@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import com.topcualperen.entity.User;
 import com.topcualperen.repository.UserRepository;
 import com.topcualperen.dto.RegisterRequest;
+import com.topcualperen.entity.Role;
 
 import java.util.Optional;
 
@@ -35,6 +36,7 @@ public class UserService {
         user.setUsername(registerRequest.getUsername());
         user.setEmail(registerRequest.getEmail());
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
+        user.setRole(registerRequest.getRole() != null ? registerRequest.getRole() : Role.USER);
 
         return userRepository.save(user);
     }

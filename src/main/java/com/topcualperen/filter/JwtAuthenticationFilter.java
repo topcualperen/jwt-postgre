@@ -1,26 +1,33 @@
 package com.topcualperen.filter;
 
+import com.topcualperen.entity.User;
+import com.topcualperen.service.UserService;
 import com.topcualperen.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Optional;
 
 @Component
-public class JwtAuthenticationFilter extends OncePerRequestFilter { // her request'te bir kez çalışır
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    @Autowired
-    private JwtUtil jwtUtil;
+    private final JwtUtil jwtUtil;
+    private final UserService userService;
 
+    public JwtAuthenticationFilter(JwtUtil jwtUtil, UserService userService) {
+        this.jwtUtil = jwtUtil;
+        this.userService = userService;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -47,17 +54,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter { // her reque
 
         // username ve Spring Security de authentication var mı kontrol et
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            Optional<User> userOptional = userService.findByUsername(username);
 
-            // Token geçerli mi kontrol et
-            if (jwtUtil.validateToken(token)) {
+            if (userOptional.isPresent() && jwtUtil.validateToken(token)) {
+                User user = userOptional.get();
 
-                UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(username, null, new ArrayList<>());
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        username,
+                        null,
+                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
+                );
 
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 // SecurityContext'e authentication'ı set et
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         }
 

@@ -1,5 +1,6 @@
 package com.topcualperen.util;
 
+import com.topcualperen.entity.Role;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -8,6 +9,8 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 public class JwtUtil {    
@@ -24,16 +27,18 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateToken(String username){
+    public String generateToken(String username, Role role){
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("role", role.name());
 
-
-       // Şu anki zamanı al
+        // Şu anki zamanı al
         Date now = new Date();
         // Token'ın ne zaman sona ereceğini hesapla
         Date expiryDate = new Date(now.getTime() + expiration);
 
         // Jwt Token Oluştur ve Döndür
         return Jwts.builder()
+                .setClaims(claims)
                 .setSubject(username)
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
@@ -50,6 +55,16 @@ public class JwtUtil {
                 .getBody()                      // Token'ın body kısmını al
                 .getSubject();                  // Subject'i (username) döndür
 
+    }
+
+    public Role getRoleFromToken(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigninKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        
+        return Role.valueOf(claims.get("role", String.class));
     }
 
     // JWT token'ın geçerli olup olmadığını kontrol eden metot

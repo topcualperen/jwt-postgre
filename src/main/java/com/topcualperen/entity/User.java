@@ -24,6 +24,9 @@ public class User {
     @NotBlank(message = "Şifre boş olamaz")
     private String password;
 
+    @Enumerated(EnumType.STRING)
+    private Role role = Role.USER; // Default olarak USER rolü atanıyor
+
     public User(){}
 
     public User(String username, String email, String password){
@@ -60,4 +63,11 @@ public class User {
         this.password = password;
     }
 
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
 }

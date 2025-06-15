@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Optional;
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -29,8 +31,9 @@ public class AuthController {
     public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
         try {
             User user = userService.registerUser(registerRequest);
+            String token = jwtUtil.generateToken(user.getUsername(), user.getRole());
 
-            return ResponseEntity.ok(new MessageResponse("Kullanıcı başarıyla kaydedildi"));
+            return ResponseEntity.ok(new JwtResponse(token, user.getUsername()));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
@@ -45,8 +48,14 @@ public class AuthController {
             return ResponseEntity.badRequest().body(new MessageResponse("Geçersiz Kullanıcı adı veya şifresi"));
         }
 
-        String token = jwtUtil.generateToken(loginRequest.getUsername());
+        Optional<User> userOpt = userService.findByUsername(loginRequest.getUsername());
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Kullanıcı bulunamadı"));
+        }
 
-        return ResponseEntity.ok(new JwtResponse(token, loginRequest.getUsername()));
+        User user = userOpt.get();
+        String token = jwtUtil.generateToken(user.getUsername(), user.getRole());
+
+        return ResponseEntity.ok(new JwtResponse(token, user.getUsername()));
     }
 }
