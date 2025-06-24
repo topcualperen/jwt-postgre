@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users", schema = "jwttt")
 public class User {
 
     @Id
